@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% load specifications%}
+
+{% block content %}
+<!--{% for order in orders%}-->
+<!--<h1>{{order.id}}</h1>-->
+<!--<h1>{{order.last_name}}</h1>-->
+<!--{% for product in order.cart.products.all %}-->
+<!--<h1>{{product.content_object.title}}</h1>-->
+<!--{% endfor %}-->
+<!--{% endfor %}-->
+
+
+
+{% for order in orders%}
+<table class="table">
+  <thead>
+  <tr>
+    <th>Дата заказа</th>
+    <td>{{order.created_at}}</td>
+  </tr>
+  </thead>
+  <thead>
+    <tr>
+      <th scope="col">Наименование товара</th>
+      <th scope="col">Изображение</th>
+      <th scope="col">Цена</th>
+      <th scope="col">Кол-во</th>
+      <th scope="col">Общая цена</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for product in order.cart.products.all %}
+        <tr>
+          <th scope="row"><a href="{{product.content_object.get_absolute_url}}">{{ product.content_object.title}}</a></th>
+          <td class="w=25"><a href="{{product.content_object.get_absolute_url}}"><img src="{{ product.content_object.photo.url}}" class = "img-fluid" width="12%"  height="12%"> </a></td>
+          <td>{{product.content_object.price}} руб</td>
+          <td>
+              {{ product.qty }} един
+          </td>
+          <td> {{ product.final_price }} руб</td>
+        </tr>
+  {% endfor %}
+        <tr>
+          <td>Итого</td>
+          <td>{{order.cart.total_products}}</td>
+        </tr>
+  <tr>
+          <td>Сумма</td>
+          <td><strong>{{order.cart.final_price}} руб.</strong></td>
+        </tr>
+  </tbody>
+</table>
+<br>
+<br>
+<br>
+  {% endfor %}
+{% endblock content %}
