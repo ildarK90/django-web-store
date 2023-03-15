@@ -1,0 +1,25 @@
+# Gulp
+node_modules
+build
+dist
+
+# WebStorm
+.idea
+.vscode
+
+# Mac
+.DS_Store
+Thumbs.db
+
+#Python
+market/__pycache__/
+rest/__pycache__/
+shop/__pycache__/
+market/migrations/
+db.sqlite3
+db1.json
+db.json
+output.xml
+venv
+media
+*.pyc

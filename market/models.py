@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Count
 from django.urls import reverse
 from django.contrib.auth.models import User
 from django.contrib.auth import get_user_model
@@ -140,11 +141,17 @@ class CategoryManager(models.Manager):
         return super().get_queryset()
 
     def get_categores_for_left_sidebar(self):
+        print('self queryset   ', self.get_queryset())
         models = get_models_for_count('notebook', 'smartphones')
+
         # qs = list(self.get_queryset().annotate(*models).values())
         qs = list(self.get_queryset().annotate(*models))
+        q = list(self.get_queryset().annotate(Count('notebook')))
+        print('qqqqqqqqqqq',q)
+        print(vars(q[0]))
         print(models)
         print(qs)
+        print(vars(qs[1]))
         data = [
             dict(name=c.name, url=c.get_absolute_url(), count=getattr(c, self.CATEGORY_NAME_COUNT_NAME[c.name]))
             for c in qs
@@ -221,7 +228,7 @@ class Customer(models.Model):
     user = models.ForeignKey(User, verbose_name='Пользователь', on_delete=models.CASCADE)
     phone = models.CharField(max_length=20, verbose_name='Номер телефона', null=True, blank=True)
     address = models.CharField(max_length=255, verbose_name='Адрес', null=True, blank=True)
-    orders = models.ManyToManyField('Order',verbose_name='Заказы покупателя',related_name='rel_customer')
+    orders = models.ManyToManyField('Order', verbose_name='Заказы покупателя', related_name='rel_customer')
 
     def __str__(self):
         return "Покупатель: {} {}".format(self.user.first_name, self.user.last_name)
@@ -256,11 +263,12 @@ class Order(models.Model):
         (BUYING_TYPE_DELIVERY, 'доставка')
     )
 
-    customer = models.ForeignKey(Customer, verbose_name='Покупатель', on_delete=models.CASCADE,related_name='rel_orders')
+    customer = models.ForeignKey(Customer, verbose_name='Покупатель', on_delete=models.CASCADE,
+                                 related_name='rel_orders')
     first_name = models.CharField(max_length=255, verbose_name='Имя')
     last_name = models.CharField(max_length=255, verbose_name='Фамилия')
     phone = models.CharField(max_length=20, verbose_name='Телефон')
-    cart = models.ForeignKey(Cart,verbose_name='Корзина', on_delete=models.CASCADE, null=True, blank=True)
+    cart = models.ForeignKey(Cart, verbose_name='Корзина', on_delete=models.CASCADE, null=True, blank=True)
     address = models.CharField(max_length=1024, verbose_name='Адрес')
     status = models.CharField(max_length=100, verbose_name='Статус заказа', choices=STATUS_CHOICES, default=STATUS_NEW)
     buying = models.CharField(max_length=100, verbose_name='Статус заказа', choices=BUYING_TYPE_CHOICES,
