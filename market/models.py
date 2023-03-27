@@ -213,7 +213,9 @@ class Cart(models.Model):
     another = models.CharField(max_length=255)
 
     def __str__(self):
-        return 'Корзина покупателя {}'.format(self.owner.user)
+        if self.owner is not None:
+            return 'Корзина покупателя {}'.format(self.owner.user)
+        return 'Корзина покупателя {}'. format(self.owner)
 
     def get_absolute_url(self):
         return reverse('cart', kwargs={'id': self.pk, })

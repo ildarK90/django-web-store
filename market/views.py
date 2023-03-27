@@ -112,15 +112,19 @@ class AddToCartView(CartMixin, View):
         # customer = Customer.objects.get(user=request.user)
         # cart = Cart.objects.get(owner=customer)
         cart = self.cart
+        print(cart.owner.user)
         content_type = ContentType.objects.get(model=ct_model)
         product = content_type.model_class().objects.get(slug=product_slug)
         cart_product, created = CartProd.objects.get_or_create(user=cart.owner, cart=cart, content_type=content_type,
                                                                object_id=product.id)
         # cart_product = CartProd.objects.create(user=cart.owner, cart=cart, content_type=content_type,
         #                                                        object_id=product.id)
-        print('creeeeeated', created)
         if created:
+            print('Создан новый товарррррррррррррррррррррррр', created)
+            print('Добавляеееееееееееем картпродакт', cart_product)
             cart.products.add(cart_product)
+        else:
+            print('Товар уже ееееееееееееееееесть ', cart_product)
         recalc_cart(cart)
         messages.add_message(request, messages.INFO, 'Товар успешно добавлен')
 
