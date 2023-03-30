@@ -1,5 +1,6 @@
 from django.views.generic import ListView, DetailView
-from rest_framework.generics import RetrieveAPIView, RetrieveUpdateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.generics import RetrieveAPIView, RetrieveUpdateAPIView, RetrieveUpdateDestroyAPIView, ListAPIView, \
+    ListCreateAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import generics, status
@@ -21,6 +22,14 @@ from market.mixins import CartMixin
 #                                                                      with_respect_to='smartphones')
 #     serializer_class = ProductSerializer
 
+class LatestProductsList(ListCreateAPIView):
+    serializer_class = LatestProductsSerializer
+
+    def get_queryset(self):
+        products = LatestProductsAPI.objects.queryset('smartphones', 'notebook')
+        print(products)
+        return products
+
 
 class ProductList(APIView):
 
@@ -34,7 +43,6 @@ class ProductList(APIView):
             prod['url'] = product.get_absolute_url()
             total_products.append(prod)
 
-        print(total_products)
         # total_prods = ProductSerializer().data
         return Response(total_products)
 
@@ -42,7 +50,9 @@ class ProductList(APIView):
 class SmartphoneEdit(APIView):
     serializer_class = SmartPhoneDetailSerializer(partial=True)
 
-    def get_queryset(self,pk):
+    # parser_classes = (MultiPartParser, FormParser)
+
+    def get_queryset(self, pk):
         smartphone = SmartPhones.objects.all()
         print(smartphone)
         return Response(smartphone)
@@ -63,7 +73,7 @@ class SmartphoneEdit(APIView):
 
     def patch(self, request, pk, format=None):
         smartphone = SmartPhones.objects.get(pk=pk)
-        serializer = SmartPhoneDetailSerializer(smartphone, data=request.data,partial=True)
+        serializer = SmartPhoneDetailSerializer(smartphone, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
@@ -83,7 +93,7 @@ class NoteBookDetailed(APIView):
     """
     serializer_class = NoteBookDetailSerializer
 
-    def get_queryset(self,pk):
+    def get_queryset(self, pk):
         notebook = NoteBook.objects.filter(pk=pk).first()
         print(notebook)
         return notebook
@@ -114,12 +124,12 @@ class NoteBookDetailed(APIView):
     #     serializer = NoteBookDetailSerializer(notebook)
     #     return Response(serializer.data)
 
-        # serializer = NoteBookDetailSerializer(notebook, data=request.data,
-        #                                  partial=True)  # set partial=True to update a data partially
-        # if serializer.is_valid():
-        #     serializer.save()
-        #     return JsonResponse(code=201, data=serializer.data)
-        # return JsonResponse(code=400, data="wrong parameters")
+    # serializer = NoteBookDetailSerializer(notebook, data=request.data,
+    #                                  partial=True)  # set partial=True to update a data partially
+    # if serializer.is_valid():
+    #     serializer.save()
+    #     return JsonResponse(code=201, data=serializer.data)
+    # return JsonResponse(code=400, data="wrong parameters")
 
 
 class ProductDet(APIView):
@@ -167,7 +177,7 @@ class ProductCategory(APIView):
             good.pop('time_update')
             good.pop('slug')
             good.pop('id')
-        print(goods,'\n')
+        print(goods, '\n')
         dict_goods = list(goods)
         # for good in dict_goods:
         #     for element in good:
@@ -271,7 +281,7 @@ class EditCategory(APIView):
 
     def patch(self, request, pk, format=None):
         category = Category.objects.get(pk=pk)
-        serializer = CategorySerializer(category, data=request.data,partial=True)
+        serializer = CategorySerializer(category, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
@@ -339,30 +349,21 @@ class CartList(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class CartProdList(APIView):
+class CartProdList(CartMixin, APIView):
     """
     List all cartproducts
     """
 
-    def get(self, request, format=None,**kwargs,):
+    def get(self, request, format=None):
         serializer_context = {
             'request': request,
         }
-        # cart1= CartProd.objects.get(pk=kwargs.get("pk"))
-        customer = Customer.objects.filter(user=request.user).first()
-        cart = Cart.objects.filter(owner=customer, in_order=False,pk=kwargs.get('pk')).first()
+        cart = self.cart
         cartprod = CartProd.objects.filter(cart=cart)
-        for i in cartprod:
-            print(i.content_object)
+        # for i in cartprod:
+        #     print(i.content_object)
         serializer = CartProductListSerializer(cartprod, context=serializer_context, many=True)
         return Response(serializer.data)
-
-    # def get(self,request):
-    #     cartprod = CartProd.objects.all()
-    #     print(cartprod)
-    #     serializer = CDSerializer(cartprod,many=True)
-    #     print(serializer)
-    #     return Response(serializer.data)
 
     def post(self, request, format=None):
         serializer = CartSerializer(data=request.data)
@@ -372,71 +373,40 @@ class CartProdList(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class CartProdDetail(APIView):
+class CartProdDetail(CartMixin, APIView):
     """
     List all cartproducts
     """
 
-    def get_object(self, request, format=None):
+    def get(self, request, pk, format=None):
+        cart = self.cart
         serializer_context = {
             'request': request,
         }
         customer = Customer.objects.filter(user=request.user).first()
         cart = Cart.objects.filter(owner=customer, in_order=False).first()
-        # cart1 = model_to_dict(cart)
-        # print(cart1.values())
-        cartprod = CartProd.objects.filter(cart=cart)
-        cartproducts = CartProd.objects.values().all
-        cartprod_test = CartProd.objects.values().first()
-        print(cartproducts)
-        print('Товаааааары', cartprod_test)
+        cartprod = CartProd.objects.filter(cart=cart, pk=pk)
         serializer = CDSerializer(cartprod, context=serializer_context, many=True)
         return Response(serializer.data)
 
-    # def get(self,request,**kwargs):
-    #     product = CartProd.objects.get(pk=kwargs.get('pk'))
-    #     serializer = CDSerializer(product)
-    #     return Response(serializer.data)
-
-    # def post(self, request, format=None):
-    #     serializer = CDSerializer(data=request.data)
-    #     if serializer.is_valid():
-    #         serializer.save()
-    #         return Response(serializer.data, status=status.HTTP_201_CREATED)
-    #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    #
-    def patch(self, request,ct_model,product_slug, format=None):
+    def patch(self, request, ct_model, product_slug, format=None):
         customer = Customer.objects.filter(user=request.user).first()
         cart = Cart.objects.filter(owner=customer, in_order=False).first()
         content_type = ContentType.objects.get(model=ct_model)
         product = content_type.model_class().objects.get(slug=product_slug)
         cartprod = CartProd.objects.filter(cart=cart)
-        cartprod.content_object.add(content_type,product)
+        cartprod.content_object.add(content_type, product)
         # cartprod.save()
-        serializer = CDSerializer(cartprod, data=request.data,partial=True)
+        serializer = CDSerializer(cartprod, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    #
+
     def delete(self, request, pk):
         cart_prod = CartProd.objects.get(pk=pk)
         cart_prod.delete()
         return Response({'status': 'Корзина товара успешно удалена'})
-
-    # def get(self,request):
-    #     cartprod = CartProd.objects.all()
-    #     print(cartprod)
-    #     serializer = CDSerializer(cartprod,many=True)
-    #     print(serializer)
-    #     return Response(serializer.data)
-
-    # def post(self, request, format=None):
-    #     serializer = CartSerializer(data=request.data)
-    #     if serializer.is_valid():
-    #         serializer.save()
-    #         return Response(serializer.data, status=status.HTTP_201_CREATED)
-    #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class AddtoCart(CartMixin, APIView):
@@ -455,21 +425,7 @@ class AddtoCart(CartMixin, APIView):
         cart_product = CartProd.objects.get_or_create(user=cart.owner, cart=cart, content_type=content_type,
                                                       object_id=product.id)
 
-    # def post(self, request, pk, format=None, **kwargs, ):
-    #     cart = self.cart
-    #     ct_model, product_slug = kwargs.get('ct_model'), kwargs.get('slug')
-    #     content_type = ContentType.objects.get(model=ct_model)
-    #     product = content_type.model_class().objects.get(slug=product_slug)
-    #     cart_product = CartProd.objects.get_or_create(user=cart.owner, cart=cart, content_type=content_type,
-    #                                                   object_id=product.id)
-    #     cart = self.cart
-    #     cart.products.add(cart_product)
-    #     recalc_cart(cart)
-    #     serializer = CDSerializer(data=request.data)
-    #     serializer.save()
-    #     return Response(serializer.data)
-
-    def patch(self, request,format=None, **kwargs, ):
+    def patch(self, request, format=None, **kwargs, ):
         cart = self.cart
         print(cart.owner.user)
         ct_model, product_slug = kwargs.get('ct_model'), kwargs.get('product_slug')
@@ -478,7 +434,7 @@ class AddtoCart(CartMixin, APIView):
         product = content_type.model_class().objects.get(slug=product_slug)
         print(product)
         cart_product, created = CartProd.objects.get_or_create(user=cart.owner, cart=cart, content_type=content_type,
-                                                      object_id=product.id)
+                                                               object_id=product.id)
         print('cart_product', cart_product)
         if created:
             print(created)

@@ -24,6 +24,21 @@ class MaxResolutionErrorException(Exception):
     pass
 
 
+class LatestProductsList:
+    @staticmethod
+    def queryset(*args, **kwargs):
+        with_respect_to = kwargs.get('with_respect_to')
+        ct_models = ContentType.objects.filter(model__in=args)
+        global products
+        total_products = []
+        for ct_model in ct_models:
+            products = ct_model.model_class()._base_manager.all().order_by('-id')[:5]
+            for product in products:
+                total_products.append(product)
+            print(products)
+        return total_products
+
+
 class LatestProductsManager:
     @staticmethod
     def get_products_for_main_page(*args, **kwargs):
@@ -46,6 +61,10 @@ class LatestProductsManager:
 
 class LatestProducts:
     objects = LatestProductsManager()
+
+
+class LatestProductsAPI:
+    objects = LatestProductsList()
 
 
 class Product(models.Model):
@@ -147,7 +166,7 @@ class CategoryManager(models.Manager):
         # qs = list(self.get_queryset().annotate(*models).values())
         qs = list(self.get_queryset().annotate(*models))
         q = list(self.get_queryset().annotate(Count('notebook')))
-        print('qqqqqqqqqqq',q)
+        print('qqqqqqqqqqq', q)
         print(vars(q[0]))
         print(models)
         print(qs)
@@ -215,7 +234,7 @@ class Cart(models.Model):
     def __str__(self):
         if self.owner is not None:
             return 'Корзина покупателя {}'.format(self.owner.user)
-        return 'Корзина покупателя {}'. format(self.owner)
+        return 'Корзина покупателя {}'.format(self.owner)
 
     def get_absolute_url(self):
         return reverse('cart', kwargs={'id': self.pk, })
