@@ -3,7 +3,7 @@ from django.contrib.contenttypes.fields import GenericRelation
 from rest_framework.relations import HyperlinkedIdentityField
 
 from market.models import *
-from .utils import Base64ImageField
+from rest.utils import Base64ImageField
 
 
 # class ProductSerializer(serializers.ModelSerializer):

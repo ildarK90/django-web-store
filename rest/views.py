@@ -47,115 +47,9 @@ class ProductList(APIView):
         return Response(total_products)
 
 
-class SmartphoneEdit(APIView):
-    serializer_class = SmartPhoneDetailSerializer(partial=True)
-
-    # parser_classes = (MultiPartParser, FormParser)
-
-    def get_queryset(self, pk):
-        smartphone = SmartPhones.objects.all()
-        print(smartphone)
-        return Response(smartphone)
-
-    # def perform_update(self, serializer):
-    #     # serializer = SmartPhoneDetailSerializer(partial=True)
-    #     # serializer.save(photo=self.request.data.get('photo'))
-    #     # serializer.save()
-
-    # def patch(self, request, pk):
-    #
-    #     # serializer.save(photo=self.request.data.get('photo'))
-    #     # serializer.save()
-    #     smartphone = SmartPhones.objects.get(pk=pk)
-    #     smartphone.save()
-    #     serializer = SmartPhoneDetailSerializer(smartphone,data=request.data, partial=True)
-    #     return Response(serializer.data)
-
-    def patch(self, request, pk, format=None):
-        smartphone = SmartPhones.objects.get(pk=pk)
-        serializer = SmartPhoneDetailSerializer(smartphone, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-            # return Response(SmartPhoneDetailSerializer(smartphone).data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class SmartUpdate(RetrieveUpdateDestroyAPIView):
-    serializer_class = SmartPhoneDetailSerializer
-    lookup_field = 'pk'
-    queryset = SmartPhones.objects.all()
-
-
-class NoteBookDetailed(APIView):
-    """
-    Выводим проект детально
-    """
-    serializer_class = NoteBookDetailSerializer
-
-    def get_queryset(self, pk):
-        notebook = NoteBook.objects.filter(pk=pk).first()
-        print(notebook)
-        return notebook
-
-    parser_classes = (MultiPartParser, FormParser,)
-
-    def perform_create(self, serializer):
-        # serializer.save(photo=self.request.data.get('photo'))
-        serializer.save()
-
-    # def patch(self, request, pk):
-    #     notebook = NoteBook.objects.get(pk=pk)
-    #     # notebook = self.get_queryset()
-    #     data = request.data
-    #     notebook.title = data.get('title', notebook.title)
-    #     notebook.slug = data.get('slug', notebook.slug)
-    #     notebook.description = data.get('description', notebook.description)
-    #     notebook.price = data.get('price', notebook.price)
-    #     notebook.photo = data.get('photo', notebook.photo)
-    #     notebook.diagonal = data.get('diagonal', notebook.diagonal)
-    #     notebook.display = data.get('display', notebook.display)
-    #     notebook.processor = data.get('processor', notebook.processor)
-    #     notebook.ram = data.get('ram', notebook.ram)
-    #     notebook.video = data.get('video', notebook.video)
-    #     notebook.chargeless_time = data.get('chargeless_time', notebook.chargeless_time)
-    #     notebook.category = data.get('category', notebook.category)
-    #     notebook.save()
-    #     serializer = NoteBookDetailSerializer(notebook)
-    #     return Response(serializer.data)
-
-    # serializer = NoteBookDetailSerializer(notebook, data=request.data,
-    #                                  partial=True)  # set partial=True to update a data partially
-    # if serializer.is_valid():
-    #     serializer.save()
-    #     return JsonResponse(code=201, data=serializer.data)
-    # return JsonResponse(code=400, data="wrong parameters")
-
-
 class ProductDet(APIView):
-    # CT_MODEL_MODEL_CLASS = {
-    #
-    #     'notebook': NoteBook,
-    #     'smartphones': SmartPhones
-    # }
-    #
-    # def dispatch(self, request, *args, **kwargs):
-    #
-    #     self.model = self.CT_MODEL_MODEL_CLASS[kwargs['ct_model']]
-    #     print(self.model,'Это модееееееель')
-    #     self.queryset = self.model._base_manager.all()
-    #     return super().dispatch(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
-        # CT_MODEL_MODEL_CLASS = {
-        #
-        #     'notebook': NoteBook,
-        #     'smartphones': SmartPhones
-        # }
-        # model = self.kwargs['model']
-        # print(model)
-        # model_prod = CT_MODEL_MODEL_CLASS[self.kwargs['model']]
-        # queryset = model_prod._base_manager.all()
         queryset = catch_model(self.kwargs['model'])
         queryset = queryset._base_manager.all()
         prod = queryset.filter(pk=self.kwargs['pk']).values()
@@ -214,15 +108,6 @@ class DeletefromCart(APIView):
                 Customer.objects.create(
                     user=request.user
                 )
-
-        # cart = Cart.objects.filter(owner=customer).first()
-        # cart_dict = cart.__dict__
-        # print(type(cart_dict))
-        # print('Это __dict__',list(cart.__dict__))
-        # car = model_to_dict(cart)
-        # print('Это model to dict',car)
-        # print('Это model to dict values',car.values())
-
         try:
             cart = Cart.objects.filter(owner=customer, in_order=False).values().first()
         except cart.DoesNotExist:
@@ -230,14 +115,6 @@ class DeletefromCart(APIView):
         carts = Cart._base_manager.all().values()
 
         return JsonResponse(dict(cart))
-
-    # def put(self, request, pk, format=None):
-    #     snippet = self.get_object(pk)
-    #     serializer = SnippetSerializer(snippet, data=request.data)
-    #     if serializer.is_valid():
-    #         serializer.save()
-    #         return Response(serializer.data)
-    #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, format=None, **kwargs, ):
         # cart = self.get_object(pk)
@@ -250,46 +127,6 @@ class DeletefromCart(APIView):
         cart_product = CartProd.objects.get(user=cart.owner, cart=cart, content_type=content_type, object_id=product.id)
         cart_product.delete()
         # return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response({'status': 'Товар успешно удален'})
-
-
-class EditCategory(APIView):
-    """
-    Retrieve, update or delete a snippet instance.
-    """
-
-    def get_object(self):
-        try:
-            return Category.objects.all()
-        except Category.DoesNotExist:
-            raise Http404
-
-    def post(self, request, format=None):
-        serializer = CategorySerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def put(self, request, pk, format=None):
-        category = Category.objects.get(pk=pk)
-        serializer = CategorySerializer(category, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def patch(self, request, pk, format=None):
-        category = Category.objects.get(pk=pk)
-        serializer = CategorySerializer(category, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request, pk, format=None):
-        category = self.get_object(pk)
-        category.delete()
         return Response({'status': 'Товар успешно удален'})
 
 
