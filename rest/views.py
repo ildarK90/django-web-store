@@ -6,13 +6,13 @@ from rest_framework.views import APIView
 from rest_framework import generics, status
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.parsers import MultiPartParser, FormParser
-
 from market.utils import recalc_cart
 from .utils import catch_model
 from .serializers import *
 from market.models import LatestProducts
 from django.http import JsonResponse, Http404
 from django.forms.models import model_to_dict
+from drf_multiple_model.views import ObjectMultipleModelAPIView
 from django.contrib.contenttypes.models import ContentType
 from market.mixins import CartMixin
 
@@ -22,28 +22,42 @@ from market.mixins import CartMixin
 #                                                                      with_respect_to='smartphones')
 #     serializer_class = ProductSerializer
 
-class LatestProductsList(ListCreateAPIView):
-    serializer_class = LatestProductsSerializer
-
-    def get_queryset(self):
-        products = LatestProductsAPI.objects.queryset('smartphones', 'notebook')
-        print(products)
-        return products
+class LatestProductsList(ObjectMultipleModelAPIView):
+    querylist = [
+        {'queryset': SmartPhones.objects.all().order_by('-id'), 'serializer_class': SmartPhoneDetailSerializer,
+         'label': 'smartphones'},
+        {'queryset': NoteBook.objects.all().order_by('-id'), 'serializer_class': NoteBookDetailSerializer,
+         'label': 'laptop'},
+    ]
 
 
 class ProductList(APIView):
 
+    def get_product_values(self, instance, fields, **kwargs):
+        products = {}
+        for elem in fields:
+            print(elem)
+            try:
+                products[elem] = getattr(instance, elem)
+                if elem == 'photo':
+                    products[elem] = str(getattr(instance, elem))
+                print(products)
+            except:
+                pass
+        return products
+
     def get(self, request):
         products = LatestProducts.objects.get_products_for_main_page('smartphones', 'notebook')
+        print(products)
         total_products = []
+        fields = (
+            'title', 'description', 'price', 'photo', 'diagonal', 'resolution', 'battery_volume', 'sd', 'sd_volume',
+            'main_cam_mp', 'front_cam_mp', 'display', 'processor', 'ram', 'video',
+            'chargeless_time')
         for product in products:
-            prod = {}
-            prod['title'] = product.title
-            prod['img'] = product.photo.url
-            prod['url'] = product.get_absolute_url()
+            prod = self.get_product_values(product, fields=fields)
             total_products.append(prod)
 
-        # total_prods = ProductSerializer().data
         return Response(total_products)
 
 
@@ -52,10 +66,20 @@ class ProductDet(APIView):
     def get(self, request, *args, **kwargs):
         queryset = catch_model(self.kwargs['model'])
         queryset = queryset._base_manager.all()
-        prod = queryset.filter(pk=self.kwargs['pk']).values()
-        # total_prods = ProductSerializer().data
-        return JsonResponse({'notebook': list(prod)})
-        # return Response(prod)
+        prod = queryset.filter(pk=self.kwargs['pk']).first().__dict__
+        global prods
+        for product in queryset:
+            if self.kwargs['model'] == 'notebook':
+                fields = (
+                    'title', 'description', 'price', 'photo', 'diagonal', 'display', 'processor', 'ram', 'video',
+                    'chargeless_time')
+                prods = model_to_dict(product, fields=fields)
+            elif self.kwargs['model'] == 'smartphones':
+                fields = ['title', 'description', 'price', 'ram', 'photo', 'diagonal', 'display', 'resolution',
+                          'battery_volume', 'sd', 'sd_volume', 'main_cam_mp', 'front_cam_mp']
+                prods = model_to_dict(product, fields=fields)
+                prods['photo'] = str(prods['photo'])
+        return Response({'notebook': dict(prods)})
 
 
 class ProductCategory(APIView):
@@ -65,21 +89,16 @@ class ProductCategory(APIView):
         print('категорияяяяя', CATEGORIES['1'])
         item = self.kwargs['model']
         queryset = catch_model(self.kwargs['model'])
+        print(queryset)
         goods = queryset._base_manager.all().values()
         for good in goods:
             good.pop('time_create')
             good.pop('time_update')
             good.pop('slug')
             good.pop('id')
-        print(goods, '\n')
-        dict_goods = list(goods)
-        # for good in dict_goods:
-        #     for element in good:
-        #         print('Categoryyyyyy id',good['category_id'])
-        #         print('Измененннннная категория',CATEGORIES[str(good['category_id'])])
-        #         good['category_id']=str(CATEGORIES[str(good['category_id'])])
-        print(list(goods))
-        return JsonResponse({item: list(goods)})
+            old_category = good['category_id']
+            good['category_id'] = CATEGORIES.get(str(old_category))
+        return Response({item: list(goods)})
 
 
 class CategoryView(APIView):
@@ -87,6 +106,19 @@ class CategoryView(APIView):
     def get_queryset(self, ):
         categories = Category.objects.all()
         return categories
+
+
+class CategoryProductView(APIView):
+    # serializer_class = CategorySerializer
+
+    def get(self, request, **kwargs):
+        serializer_context = {
+            'ct_model': self.kwargs['ct_model'],
+        }
+        categories = Category.objects.all()
+        # products = categories.category_product.filter(slug='laptop')
+        serializer = CategorySerializer(categories, context=serializer_context, many=True)
+        return Response(serializer.data)
 
 
 class DeletefromCart(APIView):
@@ -130,16 +162,16 @@ class DeletefromCart(APIView):
         return Response({'status': 'Товар успешно удален'})
 
 
-class EditCart(APIView):
+class EditCart(CartMixin, APIView):
     """
     Retrieve, update or delete a snippet instance.
     """
 
-    def get_object(self, request):
+    def get(self, request):
         try:
-            customer = Customer.objects.filter(user=request.user).first()
-            cart = Cart.objects.filter(owner=customer, in_order=False).values().first()
-            return cart
+            cart = self.cart
+            serializer = CartSerializer(cart)
+            return Response(serializer.data)
         except Cart.DoesNotExist:
             raise Http404
 
@@ -151,7 +183,7 @@ class EditCart(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def put(self, request, pk, format=None):
-        cart = self.get_object(pk)
+        cart = self.cart
         serializer = CartSerializer(cart, data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -165,25 +197,6 @@ class EditCart(APIView):
         # cart_product = CartProd.objects.get(user=cart.owner, cart=cart, content_type=content_type, object_id=product.id)
         cart.delete()
         return Response({'status': 'Товар успешно удален'})
-
-
-class CartList(APIView):
-    """
-    List all carts, or create a new snippet.
-    """
-
-    def get(self, request, format=None):
-        customer = Customer.objects.filter(user=request.user).first()
-        cart = Cart.objects.filter(owner=customer, in_order=False).first()
-        serializer = CartSerializer(cart)
-        return Response(serializer.data)
-
-    def post(self, request, format=None):
-        serializer = CartSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class CartProdList(CartMixin, APIView):
@@ -221,7 +234,7 @@ class CartProdDetail(CartMixin, APIView):
             'request': request,
         }
         customer = Customer.objects.filter(user=request.user).first()
-        cart = Cart.objects.filter(owner=customer, in_order=False).first()
+        # cart = Cart.objects.filter(owner=customer, in_order=False).first()
         cartprod = CartProd.objects.filter(cart=cart, pk=pk)
         serializer = CDSerializer(cartprod, context=serializer_context, many=True)
         return Response(serializer.data)

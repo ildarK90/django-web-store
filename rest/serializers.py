@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.contenttypes.fields import GenericRelation
 from rest_framework.relations import HyperlinkedIdentityField
-
+from django.apps import apps
 from market.models import *
 from .utils import Base64ImageField
 
@@ -32,16 +32,18 @@ class DetailProductSerializer(serializers.ModelSerializer):
 class NoteBookDetailSerializer(DetailProductSerializer):
     class Meta:
         model = NoteBook
-        fields = '__all__'
+        fields = (
+        'title', 'description', 'price', 'photo', 'diagonal', 'display', 'processor', 'ram', 'video', 'chargeless_time')
 
 
 class SmartPhoneDetailSerializer(DetailProductSerializer):
-
     photo = Base64ImageField(max_length=None, use_url=True)
+
     class Meta:
         model = SmartPhones
         # fields = ['ram','display']
-        fields = ['ram','display','photo']
+        fields = ['title', 'description', 'price', 'photo', 'ram', 'diagonal', 'display', 'photo', 'resolution',
+                  'battery_volume', 'sd', 'sd_volume', 'main_cam_mp', 'front_cam_mp']
         # read_only_fields = ['photo']
 
 
@@ -59,9 +61,26 @@ class ProductCategorySerializer(serializers.ModelSerializer):
 
 
 class CategorySerializer(serializers.ModelSerializer):
+    products = serializers.SerializerMethodField(method_name='get_product')
+
     class Meta:
         model = Category
-        fields = '__all__'
+        fields = ('name', 'products')
+
+    def get_product(self, instance):
+        lst = [NoteBook, SmartPhones]
+        ct_model = self.context.get('ct_model')
+        print('ct_modeeeeeeeeeeeel', ct_model)
+        notebook = apps.get_model('market', 'Notebook')
+        print('Это модеееееееель?',notebook)
+        product_list = []
+        for i in instance.notebook_set.all():
+            print(type(i), 'тип объекта')
+            print(i.title)
+            product = {}
+            product['name'] = i.title
+            product_list.append(product)
+        return product_list
 
 
 class ProdTypeRelatedField(serializers.RelatedField):
@@ -94,7 +113,7 @@ class CartProductListSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = CartProd
-        fields = ['id', 'customer', 'qty', 'product', 'cart', 'final_price', 'url','cartprod_delete']
+        fields = ['id', 'customer', 'qty', 'product', 'cart', 'final_price', 'url', 'cartprod_delete']
 
     def pr_customer(self, instance):
         request = self.context.get('request')

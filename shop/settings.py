@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'market',
     'crispy_forms',
     'rest_framework',
+    'drf_multiple_model',
 
 ]
 
