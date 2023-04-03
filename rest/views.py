@@ -239,20 +239,6 @@ class CartProdDetail(CartMixin, APIView):
         serializer = CDSerializer(cartprod, context=serializer_context, many=True)
         return Response(serializer.data)
 
-    def patch(self, request, ct_model, product_slug, format=None):
-        customer = Customer.objects.filter(user=request.user).first()
-        cart = Cart.objects.filter(owner=customer, in_order=False).first()
-        content_type = ContentType.objects.get(model=ct_model)
-        product = content_type.model_class().objects.get(slug=product_slug)
-        cartprod = CartProd.objects.filter(cart=cart)
-        cartprod.content_object.add(content_type, product)
-        # cartprod.save()
-        serializer = CDSerializer(cartprod, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
     def delete(self, request, pk):
         cart_prod = CartProd.objects.get(pk=pk)
         cart_prod.delete()
@@ -277,12 +263,9 @@ class AddtoCart(CartMixin, APIView):
 
     def patch(self, request, format=None, **kwargs, ):
         cart = self.cart
-        print(cart.owner.user)
         ct_model, product_slug = kwargs.get('ct_model'), kwargs.get('product_slug')
         content_type = ContentType.objects.get(model=ct_model)
-        print(content_type)
         product = content_type.model_class().objects.get(slug=product_slug)
-        print(product)
         cart_product, created = CartProd.objects.get_or_create(user=cart.owner, cart=cart, content_type=content_type,
                                                                object_id=product.id)
         print('cart_product', cart_product)
