@@ -135,6 +135,12 @@ class SmartPhones(Product):
     main_cam_mp = models.CharField(max_length=255, verbose_name='Основная камера')
     front_cam_mp = models.CharField(max_length=255, verbose_name='Фронтальная камера')
 
+    @property
+    def my_field(self):
+        if self.sd:
+            return "Есть"
+
+
     class Meta:
         verbose_name = 'Смартфон'
 

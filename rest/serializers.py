@@ -29,11 +29,43 @@ class DetailProductSerializer(serializers.ModelSerializer):
         abstract = True
 
 
+class GeneralSerializer(serializers.ModelSerializer):
+    # sd_memory = serializers.SerializerMethodField(method_name='sd')
+
+    class Meta:
+        model = None
+        exclude = ('time_create', 'time_update', 'category', 'id', 'slug')
+
+        # fields = ('title','ram', 'display', 'photo', 'resolution',
+        #                   'battery_volume', 'sd','sd_memory', 'sd_volume', 'main_cam_mp', 'front_cam_mp','title', 'description', 'price', 'photo', 'diagonal', 'display', 'processor', 'ram', 'video',
+        #     'chargeless_time')
+
+        def sd(self, instance):
+            if instance.sd == False:
+                return 'Нет слота памяти'
+            else:
+                return "Есть"
+
+        def sd_volume(self, instance):
+            if instance.volume == 0:
+                return "0"
+
+
+def getGenericSerializer(model_arg):
+    class GenericSerializer(serializers.ModelSerializer):
+        class Meta:
+            model = model_arg
+            fields = '__all__'
+
+    return GenericSerializer
+
+
 class NoteBookDetailSerializer(DetailProductSerializer):
     class Meta:
         model = NoteBook
         fields = (
-        'title', 'description', 'price', 'photo', 'diagonal', 'display', 'processor', 'ram', 'video', 'chargeless_time')
+            'title', 'description', 'price', 'photo', 'diagonal', 'display', 'processor', 'ram', 'video',
+            'chargeless_time')
 
 
 class SmartPhoneDetailSerializer(DetailProductSerializer):
@@ -70,9 +102,7 @@ class CategorySerializer(serializers.ModelSerializer):
     def get_product(self, instance):
         lst = [NoteBook, SmartPhones]
         ct_model = self.context.get('ct_model')
-        print('ct_modeeeeeeeeeeeel', ct_model)
         notebook = apps.get_model('market', 'Notebook')
-        print('Это модеееееееель?',notebook)
         product_list = []
         for i in instance.notebook_set.all():
             print(type(i), 'тип объекта')
@@ -158,7 +188,8 @@ class CDSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class CartSerializer(serializers.ModelSerializer):
-    products = serializers.SerializerMethodField(method_name='get_products')
+    # products = serializers.SerializerMethodField(method_name='get_products')
+    products = CartProductListSerializer(many=True)
 
     # products = CartProductSerializer(read_only=True, many=True)
 
@@ -167,14 +198,32 @@ class CartSerializer(serializers.ModelSerializer):
         fields = ['id', 'total_products', 'products', 'final_price', 'in_order', 'for_anonymous_user', 'owner']
 
     def get_products(self, instance):
-        request = self.context.get('request')
         cart_products = []
         for product in instance.products.all():
             prod = {}
             prod['name'] = product.content_object.title
             prod['qty'] = product.qty
             prod['final_price'] = product.final_price
-            print(prod)
+            prod['delete'] = 'api/cartprod/' + str(product.pk)
             cart_products.append(prod)
 
         return cart_products
+
+
+class OrderSerializer(serializers.ModelSerializer):
+    # buying = serializers.CharField(source='buying')
+    # created_at = serializers.DateTimeField(format="%Y-%m-%d")
+    # order_date = serializers.DateTimeField(format="%Y-%m-%d")
+
+    class Meta:
+        model = Order
+        fields = (
+            'first_name', 'last_name', 'phone', 'address', 'buying', 'comment', 'customer', 'status', 'created_at',
+            'order_date')
+
+    def products(self, instance):
+        products = []
+        for product in instance.cart.products.all():
+            product_dict = {}
+            product_dict['name'] = product.content_object.title
+            product_dict['price'] = product.content_object.price

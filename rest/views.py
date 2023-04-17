@@ -3,9 +3,10 @@ from rest_framework.generics import RetrieveAPIView, RetrieveUpdateAPIView, Retr
     ListCreateAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework import generics, status
+from rest_framework import generics, status, viewsets
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.parsers import MultiPartParser, FormParser
+import market
 from market.utils import recalc_cart
 from .utils import catch_model
 from .serializers import *
@@ -23,6 +24,7 @@ from market.mixins import CartMixin
 #     serializer_class = ProductSerializer
 
 class LatestProductsList(ObjectMultipleModelAPIView):
+    " Вывод списка товаров с помощью сериалайзера, в данном случае используется сразу два сериалазйера с помощью библиотеи ObjectMultipleModelAPIView "
     querylist = [
         {'queryset': SmartPhones.objects.all().order_by('-id'), 'serializer_class': SmartPhoneDetailSerializer,
          'label': 'smartphones'},
@@ -32,6 +34,7 @@ class LatestProductsList(ObjectMultipleModelAPIView):
 
 
 class ProductList(APIView):
+    """ Функция для вывода полей разных товаров"""
 
     def get_product_values(self, instance, fields, **kwargs):
         products = {}
@@ -46,8 +49,8 @@ class ProductList(APIView):
                 pass
         return products
 
-    def get(self, request):
-        products = LatestProducts.objects.get_products_for_main_page('smartphones', 'notebook')
+    def get(self, request,**kwargs):
+        products = LatestProducts.objects.get_products_for_main_page(self.kwargs.get('model'))
         print(products)
         total_products = []
         fields = (
@@ -61,9 +64,35 @@ class ProductList(APIView):
         return Response(total_products)
 
 
+class GeneralViewSet(viewsets.ModelViewSet):
+
+    @property
+    def model(self):
+        return apps.get_model(app_label='market', model_name=str(self.kwargs['model']))
+
+    def get_queryset(self):
+        model = self.model
+        return model.objects.all()
+
+    def get_serializer_class(self):
+        GeneralSerializer.Meta.model = self.model
+        return GeneralSerializer
+
+
+class MyView(APIView):
+    def get(self, request, format=None):
+        # ...
+        GenericSzl = getGenericSerializer(self.kwargs.get('model')).object.all()
+        print(GenericSzl)
+        serializer = GenericSzl(many=True)
+        return Response(serializer.data)
+
+
 class ProductDet(APIView):
+    """детальная информация о товаре без сериалайзера"""
 
     def get(self, request, *args, **kwargs):
+        # Product_classes = {'notebook': }
         queryset = catch_model(self.kwargs['model'])
         queryset = queryset._base_manager.all()
         prod = queryset.filter(pk=self.kwargs['pk']).first().__dict__
@@ -79,7 +108,7 @@ class ProductDet(APIView):
                           'battery_volume', 'sd', 'sd_volume', 'main_cam_mp', 'front_cam_mp']
                 prods = model_to_dict(product, fields=fields)
                 prods['photo'] = str(prods['photo'])
-        return Response({'notebook': dict(prods)})
+        return Response({str(self.kwargs['model']): dict(prods)})
 
 
 class ProductCategory(APIView):
@@ -168,9 +197,10 @@ class EditCart(CartMixin, APIView):
     """
 
     def get(self, request):
+        context = {'request': request}
         try:
             cart = self.cart
-            serializer = CartSerializer(cart)
+            serializer = CartSerializer(cart, context=context)
             return Response(serializer.data)
         except Cart.DoesNotExist:
             raise Http404
@@ -233,15 +263,15 @@ class CartProdDetail(CartMixin, APIView):
         serializer_context = {
             'request': request,
         }
-        customer = Customer.objects.filter(user=request.user).first()
-        # cart = Cart.objects.filter(owner=customer, in_order=False).first()
         cartprod = CartProd.objects.filter(cart=cart, pk=pk)
         serializer = CDSerializer(cartprod, context=serializer_context, many=True)
         return Response(serializer.data)
 
     def delete(self, request, pk):
+        cart = self.cart
         cart_prod = CartProd.objects.get(pk=pk)
         cart_prod.delete()
+        recalc_cart(cart)
         return Response({'status': 'Корзина товара успешно удалена'})
 
 
@@ -250,16 +280,16 @@ class AddtoCart(CartMixin, APIView):
     Add to Cart
     """
 
-    def get_queryset(self, request, **kwargs):
-        serializer_context = {
-            'request': request,
-        }
-        cart = self.cart
-        ct_model, product_slug = kwargs.get('ct_model'), kwargs.get('slug')
-        content_type = ContentType.objects.get(model=ct_model)
-        product = content_type.model_class().objects.get(slug=product_slug)
-        cart_product = CartProd.objects.get_or_create(user=cart.owner, cart=cart, content_type=content_type,
-                                                      object_id=product.id)
+    # def get_queryset(self, request, **kwargs):
+    #     serializer_context = {
+    #         'request': request,
+    #     }
+    #     cart = self.cart
+    #     ct_model, product_slug = kwargs.get('ct_model'), kwargs.get('slug')
+    #     content_type = ContentType.objects.get(model=ct_model)
+    #     product = content_type.model_class().objects.get(slug=product_slug)
+    #     cart_product = CartProd.objects.get_or_create(user=cart.owner, cart=cart, content_type=content_type,
+    #                                                   object_id=product.id)
 
     def patch(self, request, format=None, **kwargs, ):
         cart = self.cart
@@ -278,3 +308,58 @@ class AddtoCart(CartMixin, APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ChangeQTY(CartMixin, APIView):
+
+    def patch(self, reqest, pk):
+        cart = self.cart
+        cartproduct = CartProd.objects.filter(pk=pk).first()
+        print(cartproduct)
+        serializer = CDSerializer(cartproduct, data=reqest.data, partial=True)
+        print(serializer)
+        if serializer.is_valid():
+            serializer.save()
+            recalc_cart(cart)
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class OrderView(CartMixin, APIView):
+
+    def get(self, request):
+        context = {
+            "request": request
+        }
+        cart = self.cart
+        serializer = CartSerializer(cart, context=context)
+        return Response(serializer.data)
+
+    def post(self, request):
+        customer = Customer.objects.filter(user=request.user).first()
+        cart = self.cart
+        order = Order.objects.create(
+            first_name=request.data['first_name'],
+            last_name=request.data['last_name'],
+            customer=customer,
+            phone=request.data['phone'],
+            address=request.data['address'],
+            buying=request.data['buying'],
+        )
+        cart.in_order = True
+        cart.save()
+        order.cart = cart
+        order.full_clean()
+        order.save()
+        customer.orders.add(order)
+        # serializer = OrderSerializer(data=request.data)
+        # if serializer.is_valid():
+        #     model_obj = serializer.save()
+        #     cart.in_order = True
+        #     cart.save()
+        #     model_obj.cart = cart
+        #     customer.order.add(model_obj)
+        #     serializer.save()
+        serializer = OrderSerializer(order)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
