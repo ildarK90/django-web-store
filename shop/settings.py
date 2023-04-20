@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
 from pathlib import Path
+import _locale
+_locale._getdefaultlocale = (lambda *args: ['en_US', 'utf8'])
 import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -28,6 +30,7 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 # Application definition
+_locale._getdefaultlocale = (lambda *args: ['en_US', 'utf8'])
 
 INSTALLED_APPS = [
     'django.contrib.admin',

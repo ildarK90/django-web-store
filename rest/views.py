@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.views.generic import ListView, DetailView
 from rest_framework.generics import RetrieveAPIView, RetrieveUpdateAPIView, RetrieveUpdateDestroyAPIView, ListAPIView, \
     ListCreateAPIView
@@ -34,12 +35,11 @@ class LatestProductsList(ObjectMultipleModelAPIView):
 
 
 class ProductList(APIView):
-    """ Функция для вывода полей разных товаров"""
+    """ Функция для вывода полей разных товаров без применения сериалайзера"""
 
     def get_product_values(self, instance, fields, **kwargs):
         products = {}
         for elem in fields:
-            print(elem)
             try:
                 products[elem] = getattr(instance, elem)
                 if elem == 'photo':
@@ -50,8 +50,7 @@ class ProductList(APIView):
         return products
 
     def get(self, request,**kwargs):
-        products = LatestProducts.objects.get_products_for_main_page(self.kwargs.get('model'))
-        print(products)
+        products = LatestProducts.objects.get_products_for_main_page(self.kwargs.get('slug'))
         total_products = []
         fields = (
             'title', 'description', 'price', 'photo', 'diagonal', 'resolution', 'battery_volume', 'sd', 'sd_volume',
@@ -65,6 +64,7 @@ class ProductList(APIView):
 
 
 class GeneralViewSet(viewsets.ModelViewSet):
+    """С помощью динамического сериалайзера"""
 
     @property
     def model(self):
@@ -132,9 +132,13 @@ class ProductCategory(APIView):
 
 class CategoryView(APIView):
 
-    def get_queryset(self, ):
+    def get(self,request):
+        context = {
+            "request": request
+        }
         categories = Category.objects.all()
-        return categories
+        serializer = CategorySerializer(categories,context=context, many=True)
+        return Response(serializer.data)
 
 
 class CategoryProductView(APIView):
@@ -179,7 +183,6 @@ class DeletefromCart(APIView):
 
     def delete(self, request, format=None, **kwargs, ):
         # cart = self.get_object(pk)
-        print(kwargs['model'])
         customer = Customer.objects.filter(user=request.user).first()
         cart = Cart.objects.filter(owner=customer, in_order=False).values().first()
         # cart = request.data
@@ -292,6 +295,9 @@ class AddtoCart(CartMixin, APIView):
     #                                                   object_id=product.id)
 
     def patch(self, request, format=None, **kwargs, ):
+        serializer_context = {
+                    'request': request,
+                }
         cart = self.cart
         ct_model, product_slug = kwargs.get('ct_model'), kwargs.get('product_slug')
         content_type = ContentType.objects.get(model=ct_model)
@@ -300,10 +306,10 @@ class AddtoCart(CartMixin, APIView):
                                                                object_id=product.id)
         print('cart_product', cart_product)
         if created:
-            print(created)
             cart.products.add(cart_product)
+            # cart.save()
         recalc_cart(cart)
-        serializer = CartSerializer(cart, data=request.data)
+        serializer = CartSerializer(cart, data=request.data, context=serializer_context, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
@@ -335,6 +341,7 @@ class OrderView(CartMixin, APIView):
         serializer = CartSerializer(cart, context=context)
         return Response(serializer.data)
 
+    @transaction.atomic
     def post(self, request):
         customer = Customer.objects.filter(user=request.user).first()
         cart = self.cart

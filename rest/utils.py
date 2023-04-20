@@ -13,7 +13,6 @@ def catch_model(model, *args, **kwargs):
         'notebook': NoteBook,
         'smartphones': SmartPhones
     }
-    print(model)
     model_prod = CT_MODEL_MODEL_CLASS[model]
     return model_prod
 

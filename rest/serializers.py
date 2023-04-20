@@ -34,7 +34,7 @@ class GeneralSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = None
-        exclude = ('time_create', 'time_update', 'category', 'id', 'slug')
+        exclude = ('time_create', 'time_update', 'category')
 
         # fields = ('title','ram', 'display', 'photo', 'resolution',
         #                   'battery_volume', 'sd','sd_memory', 'sd_volume', 'main_cam_mp', 'front_cam_mp','title', 'description', 'price', 'photo', 'diagonal', 'display', 'processor', 'ram', 'video',
@@ -85,6 +85,18 @@ class CategoryDetailSerializer(DetailProductSerializer):
         fields = '__all__'
 
 
+class CategorySerializer(serializers.ModelSerializer):
+
+    category_products = HyperlinkedIdentityField(
+        view_name='cat_prod',
+        lookup_field='slug'
+    )
+
+    class Meta:
+        model = Category
+        fields = ('name', 'slug', 'category_products')
+
+
 class ProductCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
@@ -92,25 +104,24 @@ class ProductCategorySerializer(serializers.ModelSerializer):
         abstract = True
 
 
-class CategorySerializer(serializers.ModelSerializer):
-    products = serializers.SerializerMethodField(method_name='get_product')
-
-    class Meta:
-        model = Category
-        fields = ('name', 'products')
-
-    def get_product(self, instance):
-        lst = [NoteBook, SmartPhones]
-        ct_model = self.context.get('ct_model')
-        notebook = apps.get_model('market', 'Notebook')
-        product_list = []
-        for i in instance.notebook_set.all():
-            print(type(i), 'тип объекта')
-            print(i.title)
-            product = {}
-            product['name'] = i.title
-            product_list.append(product)
-        return product_list
+# class CategorySerializer(serializers.ModelSerializer):
+#     products = serializers.SerializerMethodField(method_name='get_product')
+#
+#     class Meta:
+#         model = Category
+#         fields = ('name', 'products')
+#
+#     def get_product(self, instance):
+#         lst = [NoteBook, SmartPhones]
+#         ct_model = self.context.get('ct_model')
+#         notebook = apps.get_model('market', ct_model)
+#         print(type(notebook))
+#         product_list = []
+#         for i in instance.notebook_set.all():
+#             product = {}
+#             product['name'] = i.title
+#             product_list.append(product)
+#         return product_list
 
 
 class ProdTypeRelatedField(serializers.RelatedField):
