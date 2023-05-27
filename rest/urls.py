@@ -19,5 +19,5 @@ urlpatterns = [
     path('addtocart/<str:ct_model>/<str:product_slug>', AddtoCart.as_view(), name='addtocart'),
     path('change_qty/<int:pk>',ChangeQTY.as_view(),name='changeqty'),
     path('orders',OrderView.as_view(),name='orders')
-    
+
 ]

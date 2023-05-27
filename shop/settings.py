@@ -40,9 +40,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'market',
+    'shopadmin',
     'crispy_forms',
     'rest_framework',
     'drf_multiple_model',
+    'import_export',
 
 ]
 
@@ -84,7 +86,7 @@ ROOT_URLCONF = 'shop.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR,'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -120,6 +122,9 @@ DATABASES = {
     }
 }
 
+SERIALIZATION_MODULES = {
+    'csv' : 'path.to.csv_serializer',
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators

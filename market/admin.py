@@ -3,6 +3,10 @@ from django.core.exceptions import ValidationError
 from django.forms import ModelChoiceField, ModelForm
 from django.utils.safestring import mark_safe
 from .models import *
+from import_export.admin import ImportExportActionModelAdmin
+from import_export import resources
+from import_export import fields
+from import_export.widgets import ForeignKeyWidget
 from django import forms
 
 from PIL import Image
@@ -30,7 +34,21 @@ class NotebookAdminForm(ModelForm):
         return photo
 
 
-class NotebookAdmin(admin.ModelAdmin):
+# class NotebookAdmin(admin.ModelAdmin):
+#     form = NotebookAdminForm
+#
+#     def formfield_for_foreignkey(self, db_field, request, **kwargs):
+#         if db_field.name == 'category':
+#             return ModelChoiceField(Category.objects.filter(slug='laptop'))
+#         return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+class NotebookResource(resources.ModelResource):
+    class Meta:
+        model = NoteBook
+
+
+class NotebookAdmin(ImportExportActionModelAdmin):
+    resource_class = NotebookResource
     form = NotebookAdminForm
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
@@ -63,7 +81,6 @@ class SmartphoneAdmin(admin.ModelAdmin):
         if db_field.name == 'category':
             return ModelChoiceField(Category.objects.filter(slug='smartphones'))
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
-
 
 
 # admin.site.register(SmartPhones)

@@ -62,7 +62,7 @@ class CategoryDetailView(CartMixin, CategoryDetailMixin, DetailView):
     model = Category
     queryset = Category.objects.all()
     context_object_name = 'category'
-    template_name = 'category_detail.html'
+    template_name = 'export_csv.html'
     slug_url_kwarg = 'slug'
 
     def get_context_data(self, **kwargs):

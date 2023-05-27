@@ -15,10 +15,16 @@ Thumbs.db
 market/__pycache__/
 rest/__pycache__/
 shop/__pycache__/
+market/csv_result/
+market/csv_source/
+market/json_result/
 market/migrations/
 db.sqlite3
 db1.json
 db.json
+decode.py
+json_to_csv.py
+read_json.py
 output.xml
 venv
 media
