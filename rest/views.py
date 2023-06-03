@@ -27,9 +27,9 @@ from market.mixins import CartMixin
 class LatestProductsList(ObjectMultipleModelAPIView):
     " Вывод списка товаров с помощью сериалайзера, в данном случае используется сразу два сериалазйера с помощью библиотеи ObjectMultipleModelAPIView "
     querylist = [
-        {'queryset': SmartPhones.objects.all().order_by('-id'), 'serializer_class': SmartPhoneDetailSerializer,
+        {'queryset': SmartPhones.objects.all().prefetch_related('category').order_by('-id'), 'serializer_class': SmartPhoneDetailSerializer,
          'label': 'smartphones'},
-        {'queryset': NoteBook.objects.all().order_by('-id'), 'serializer_class': NoteBookDetailSerializer,
+        {'queryset': NoteBook.objects.all().prefetch_related('category').order_by('-id'), 'serializer_class': NoteBookDetailSerializer,
          'label': 'laptop'},
     ]
 

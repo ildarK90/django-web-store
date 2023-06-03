@@ -73,14 +73,29 @@ class SmartphoneAdminForm(ModelForm):
         return self.cleaned_data
 
 
-class SmartphoneAdmin(admin.ModelAdmin):
-    change_form_template = 'admin.html'
+class SmarthphoneResource(resources.ModelResource):
+    class Meta:
+        model = NoteBook
+
+
+class SmartphoneAdmin(ImportExportActionModelAdmin):
+    resource_class = SmarthphoneResource
     form = SmartphoneAdminForm
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'category':
-            return ModelChoiceField(Category.objects.filter(slug='smartphones'))
+            return ModelChoiceField(Category.objects.filter(slug='laptop'))
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+
+# class SmartphoneAdmin(admin.ModelAdmin):
+#     change_form_template = 'admin.html'
+#     form = SmartphoneAdminForm
+#
+#     def formfield_for_foreignkey(self, db_field, request, **kwargs):
+#         if db_field.name == 'category':
+#             return ModelChoiceField(Category.objects.filter(slug='smartphones'))
+#         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
 # admin.site.register(SmartPhones)

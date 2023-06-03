@@ -1,1 +1,0 @@
-[{"model": "market.category", "pk": 1, "fields": {"name": "Ноутбуки", "slug": "laptop"}}, {"model": "market.category", "pk": 2, "fields": {"name": "Смартфоны", "slug": "smartphones"}}]
