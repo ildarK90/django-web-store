@@ -9,6 +9,8 @@ from django.apps import apps
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
 from django.contrib import admin
+from django.views.generic import ListView
+
 from .forms import MyForm
 from .utils import getjson_to_csv, post_to_csv, normal_json, del_id, download_csv
 from .models import TestModel
@@ -87,3 +89,17 @@ class CSVexport(View):
     def get(self, request):
         data = download_csv(ModelAdmin, request, TestModel)
         return HttpResponse(data, content_type='text/csv')
+
+
+class CategoryDetailView(ListView):
+    model = Category
+    queryset = Category.objects.all()
+    context_object_name = 'category'
+    template_name = 'listprod.html'
+    slug_url_kwarg = 'slug'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['categories'] = Category.objects.all()
+
+        return context

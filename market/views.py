@@ -52,7 +52,6 @@ class ProductDetailView(CartMixin, CategoryDetailMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['ct_model'] = self.model._meta.model_name
-        print(context['ct_model'],'this is modeeeeeeel')
         context['cart'] = self.cart
 
         return context
@@ -62,13 +61,12 @@ class CategoryDetailView(CartMixin, CategoryDetailMixin, DetailView):
     model = Category
     queryset = Category.objects.all()
     context_object_name = 'category'
-    template_name = 'export_csv.html'
+    template_name = 'category_detail.html'
     slug_url_kwarg = 'slug'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['cart'] = self.cart
-
+        # context['cart'] = self.cart
         return context
 
 
@@ -80,7 +78,6 @@ class DeleteFromCartView(CartMixin, View):
         content_type = ContentType.objects.get(model=ct_model)
         product = content_type.model_class().objects.get(slug=product_slug)
         cart_product = CartProd.objects.get(user=cart.owner, cart=cart, content_type=content_type, object_id=product.id)
-        print(cart_product)
         # cart.products.remove(cart_product)
         cart_product.delete()
         recalc_cart(cart)

@@ -22,7 +22,7 @@
           <td class="w=25"><img src="{{ item.content_object.photo.url}}" class = "img-fluid" width="12%"  height="12%"> </td>
           <td>{{item.content_object.price}} руб</td>
           <td>
-            <form action="{% url 'change_qty' ct_model=item.content_object|to_class_name slug=item.content_object.slug %}" method="POST">
+            <form action="{% url 'change_qty' ct_model=item.content_object.get_model_name slug=item.content_object.slug %}" method="POST">
               {% csrf_token %}
               <input type="number" class="form-control" style="width: 70px;" min="1" name="qty" value="{{ item.qty }}">
               <br>

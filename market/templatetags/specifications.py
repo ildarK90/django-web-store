@@ -77,6 +77,11 @@ def product_spec(product):
 def to_class_name(value):
     return value.__class__.__name__.lower()
 
+# @register.filter
+# def content_type_name(value):
+#     return value.__class__.__name__.lower()
+
+
 
 @register.filter
 def filter_cart(value):

@@ -27,9 +27,9 @@ from market.mixins import CartMixin
 class LatestProductsList(ObjectMultipleModelAPIView):
     " Вывод списка товаров с помощью сериалайзера, в данном случае используется сразу два сериалазйера с помощью библиотеи ObjectMultipleModelAPIView "
     querylist = [
-        {'queryset': SmartPhones.objects.all().prefetch_related('category').order_by('-id'), 'serializer_class': SmartPhoneDetailSerializer,
+        {'queryset': SmartPhones.objects.all().order_by('-id'), 'serializer_class': SmartPhoneDetailSerializer,
          'label': 'smartphones'},
-        {'queryset': NoteBook.objects.all().prefetch_related('category').order_by('-id'), 'serializer_class': NoteBookDetailSerializer,
+        {'queryset': NoteBook.objects.all().order_by('-id'), 'serializer_class': NoteBookDetailSerializer,
          'label': 'laptop'},
     ]
 
@@ -44,7 +44,6 @@ class ProductList(APIView):
                 products[elem] = getattr(instance, elem)
                 if elem == 'photo':
                     products[elem] = str(getattr(instance, elem))
-                print(products)
             except:
                 pass
         return products
@@ -112,7 +111,7 @@ class ProductDet(APIView):
 
 
 class ProductCategory(APIView):
-
+    """Вывод товаров по категории без использования сериалайзера"""
     def get(self, request, *args, **kwargs):
         CATEGORIES = {"1": "notebook", "2": "smartphones"}
         print('категорияяяяя', CATEGORIES['1'])

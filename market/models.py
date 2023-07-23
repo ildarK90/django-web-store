@@ -172,11 +172,6 @@ class CategoryManager(models.Manager):
         # qs = list(self.get_queryset().annotate(*models).values())
         qs = list(self.get_queryset().annotate(*models))
         q = list(self.get_queryset().annotate(Count('notebook')))
-        print('qqqqqqqqqqq', q)
-        print(vars(q[0]))
-        print(models)
-        print(qs)
-        print(vars(qs[1]))
         data = [
             dict(name=c.name, url=c.get_absolute_url(), count=getattr(c, self.CATEGORY_NAME_COUNT_NAME[c.name]))
             for c in qs
@@ -213,7 +208,10 @@ class CartProd(models.Model):
     final_price = models.DecimalField(max_digits=9, decimal_places=2, verbose_name='Общая цена')
 
     def __str__(self):
-        return 'Продукт: {} (для корзины)'.format(self.content_object.title)
+        if self.content_object is not None:
+            return 'Продукт: {} (для корзины)'.format(self.content_object.title)
+        else:
+            return "Неизвестный продукт"
 
     def get_absolute_url(self):
         return reverse('cart_product', kwargs={'id': self.pk})
