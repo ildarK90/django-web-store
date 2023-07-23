@@ -32,6 +32,8 @@ urlpatterns = [
     path('del/<str:ct_model>/<str:product_slug>', delete_pr, name='delete_pr'),
     path('checkout/', CheckoutView.as_view(), name='checkout'),
     path('orders/', OrderView.as_view(), name='order'),
-    path('make-order/', MakeOrderView.as_view(), name='make_order')
+    path('make-order/', MakeOrderView.as_view(), name='make_order'),
+    path('register/', RegisterUser.as_view(), name='register'),
+    path('login/', MakeOrderView.as_view(), name='login'),
 
 ]

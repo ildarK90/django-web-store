@@ -1,10 +1,13 @@
+from django.contrib.auth.forms import UserCreationForm
 from django.db import transaction
+from django.urls import reverse_lazy
+
 from .models import *
 from django.contrib.contenttypes.models import ContentType
 from django.shortcuts import render
 from django.contrib import messages
 from django.http import HttpResponseRedirect
-from django.views.generic import DetailView, View
+from django.views.generic import DetailView, View, CreateView
 from django.db import models
 from .mixins import *
 from .forms import OrderForm
@@ -210,3 +213,14 @@ class MakeOrderView(CartMixin, View):
             messages.add_message(request, messages.INFO, 'Спасибо за заказ! Менеджер с Вами свяжется')
             return HttpResponseRedirect('/')
         return HttpResponseRedirect('/checkout')
+
+class RegisterUser(CreateView):
+    form_class = UserCreationForm
+    template_name = 'registration.html'
+    success_url = reverse_lazy('login')
+
+    def get_context_data(self,*,object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        return context
+
+
