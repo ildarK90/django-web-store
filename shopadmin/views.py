@@ -60,7 +60,7 @@ class ExportCSView(View):
         elif request.method == 'POST' and request.FILES.get('json_file'):
             json_file = request.FILES['json_file']
             name = request.FILES[u'json_file'].name
-            normal_json(json_file,name,200)
+            normal_json(json_file, name, 200)
             # json_filename = request.FILES[u'json_file'].name
             # normal_json(json_file, json_filename)
             # fs = FileSystemStorage()

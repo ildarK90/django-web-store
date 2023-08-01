@@ -76,16 +76,12 @@ def normal_json(file, name, rounds=1):
     Преобразование json, удаление названия модели и лишних таблиц
     """
     # filename = name[:name.rfind('.')]
-    filename, extension = os.path.splitext(name)
-    # json_file = json.load(file)
+    # filename, extension = os.path.splitext(name)
     json_file = file.read()
-    # f = codecs.open(json_file,'r',encoding='utf-8')
     json_file = str(json_file.decode('utf-8'))
-    # json_file = str(json_file.decode('utf-8'))
     json_file = json.loads(json_file)
     json_data = []
     json_datalist = [a for a in json_file if 'fields' in a]
-    print(json_datalist)
     slugi = []
 
     if not json_datalist:
@@ -93,39 +89,24 @@ def normal_json(file, name, rounds=1):
         for n in range(rounds):
             pr_n = 0
             for product in json_file:
+
                 try:
                     product.pop('id')
                     slug_list.append(product['slug'])
-                    print(slug_list)
-                    print(product['slug'])
                     json_data.append(copy.copy(product))
-                    print(product)
+                    # print(product)
                 except Exception:
                     product['slug'] = f"{slug_list[pr_n]}{n}"
                     json_data.append(copy.copy(product))
-                    print(json_data)
                     slugi.append(product)
+                    # print(json_data)
                 pr_n += 1
     else:
         for i in range(rounds):
             for product in json_datalist:
                 json_data.append(product['fields'])
 
-
-
-    # json_file = json.loads(json_file)
-    # print(json_file)
-    # for i in json_file:
-    #     path = f"csv_result\\{filename}.csv"
-    #     print(path)
-    #     # print(i)
-    #     with open(path, "a") as csv_file:
-    #         writer = csv.writer(csv_file)
-    #         writer.writerow(
-    #             (i.values())
-    #         )
-
-    path = f"json_result\\{filename}.json"
+    path = Path('json_result', name)
     with open(path, "w", encoding='utf-8') as write_file:
         json.dump(json_data, write_file, ensure_ascii=False, encoding='utf-8')
 
