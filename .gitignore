@@ -19,6 +19,7 @@ market/csv_result/
 market/csv_source/
 market/json_result/
 market/migrations/
+market/templatetags/__pycache__/
 csv_folder
 csv_result
 json_result
