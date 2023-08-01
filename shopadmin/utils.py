@@ -9,6 +9,8 @@ from django.http import HttpResponse
 from django.contrib.contenttypes.models import ContentType
 from .models import *
 from market.models import NoteBook, SmartPhones, Cart, Category
+from pathlib import Path
+import os
 
 
 def read(file):
@@ -70,31 +72,23 @@ def post_to_csv(json_file, name):
 
 
 def normal_json(file, name, rounds=1):
-    filename = name[:name.rfind('.')]
+    """
+    Преобразование json, удаление названия модели и лишних таблиц
+    """
+    # filename = name[:name.rfind('.')]
+    filename, extension = os.path.splitext(name)
     # json_file = json.load(file)
     json_file = file.read()
     # f = codecs.open(json_file,'r',encoding='utf-8')
     json_file = str(json_file.decode('utf-8'))
     # json_file = str(json_file.decode('utf-8'))
     json_file = json.loads(json_file)
-    global json_data
     json_data = []
     json_datalist = [a for a in json_file if 'fields' in a]
     print(json_datalist)
-    global slug_product
-    global slugi
     slugi = []
-    global slug_list
-    if json_datalist:
-        print('Первооооооооооооооое условие')
-        for i in range(rounds):
-            print(i)
-            # print('json_listttttttttttttttttt',json_datalist)
-            for product in json_datalist:
-                json_data.append(product['fields'])
 
     if not json_datalist:
-        print('Второе условииииииииииие')
         slug_list = []
         for n in range(rounds):
             pr_n = 0
@@ -106,12 +100,18 @@ def normal_json(file, name, rounds=1):
                     print(product['slug'])
                     json_data.append(copy.copy(product))
                     print(product)
-                except:
+                except Exception:
                     product['slug'] = f"{slug_list[pr_n]}{n}"
                     json_data.append(copy.copy(product))
                     print(json_data)
                     slugi.append(product)
                 pr_n += 1
+    else:
+        for i in range(rounds):
+            for product in json_datalist:
+                json_data.append(product['fields'])
+
+
 
     # json_file = json.loads(json_file)
     # print(json_file)
@@ -159,7 +159,10 @@ def download_csv(modeladmin, request, model):
     # force download.
     response['Content-Disposition'] = 'attachment;filename=export.csv'
     # the csv writer
-    with open('output_file_name.csv', 'w+', encoding='utf-8', errors='replace', newline='') as file:  # encoding='utf-8'
+    if not os.path.isdir('csv_folder'):
+        os.mkdir('csv_folder')
+
+    with open(Path('csv_folder', 'output_file_name.csv'), 'w+', encoding='utf-8', errors='replace', newline='') as file:  # encoding='utf-8'
         writer = csv.writer(file)
         field_names = [field.name for field in opts.fields]
         # Write a first row with header information

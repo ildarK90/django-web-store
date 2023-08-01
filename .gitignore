@@ -19,6 +19,10 @@ market/csv_result/
 market/csv_source/
 market/json_result/
 market/migrations/
+csv_folder
+csv_result
+json_result
+json_source
 db.sqlite3
 db1.json
 db.json
