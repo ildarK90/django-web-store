@@ -7,5 +7,6 @@ urlpatterns = [
     path('deletetest', DeleteProducts.as_view(), name='delete-all'),
     path('exportcsv', CSVexport.as_view(), name='csv'),
     path('categories', CategoryDetailView.as_view(), name='category_list'),
+    path('hui', JsonToCsv.as_view(), name='hui'),
 
 ]

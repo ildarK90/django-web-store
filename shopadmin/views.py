@@ -1,4 +1,5 @@
 import csv
+import os
 
 from django.contrib.admin import ModelAdmin
 from django.contrib.contenttypes.models import ContentType
@@ -8,7 +9,7 @@ from django.views import View
 from django.apps import apps
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.views.generic import ListView
 
 from .forms import MyForm
@@ -18,6 +19,20 @@ import simplejson as json
 
 from market.models import Category
 
+
+class JsonToCsv(View):
+
+    def post(self, request):
+        if request.FILES.get('myfile'):
+            file = request.FILES['myfile']
+            name, _ = os.path.splitext(request.FILES[u'myfile'].name)
+            post_to_csv(file, name)
+            return HttpResponseRedirect('dumpdata')
+        else:
+
+            messages.add_message(request, messages.INFO, 'Спасибо за заказ! Hui')
+            # return render(request, 'export_csv.html', {"hui": "Privet hui"})
+            return HttpResponseRedirect('dumpdata')
 
 class ExportCSView(View):
     template_name = 'export_csv.html'
@@ -48,16 +63,15 @@ class ExportCSView(View):
         return render(request, 'export_csv.html', context)
 
     def post(self, request):
-        if request.method == 'POST' and request.FILES.get('myfile'):
-            myfile = request.FILES['myfile']
-            name = request.FILES[u'myfile'].name
-            post_to_csv(myfile, name)
-            # fs = FileSystemStorage()
-            # filename = fs.save(myfile.name, myfile)
-            # uploaded_file_url = fs.url(filename)
-            # file_to_csv2(src,myfile)
-            return HttpResponseRedirect('dumpdata')
-        elif request.method == 'POST' and request.FILES.get('json_file'):
+    #     if request.method == 'POST' and request.FILES.get('myfile'):
+    #         myfile = request.FILES['myfile']
+    #         name, _ = os.path.splitext(request.FILES[u'myfile'].name)
+    #
+    #         post_to_csv(myfile, name)
+    #
+    #         return HttpResponseRedirect('dumpdata')
+
+        if request.method == 'POST' and request.FILES.get('json_file'):
             json_file = request.FILES['json_file']
             name = request.FILES[u'json_file'].name
             normal_json(json_file, name, 200)

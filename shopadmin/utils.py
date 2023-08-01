@@ -11,6 +11,7 @@ from .models import *
 from market.models import NoteBook, SmartPhones, Cart, Category
 from pathlib import Path
 import os
+import pandas as pd
 
 
 def read(file):
@@ -47,6 +48,7 @@ def getjson_to_csv(modelname):
     with open(models_files[modelname]) as file:
         src = json.load(file)
     csv_filename = 'csv_result\\' + str(modelname) + '.' + 'csv'
+
     for i in src:
         with open(csv_filename, "a") as csv_file:
             writer = csv.writer(csv_file)
@@ -56,19 +58,14 @@ def getjson_to_csv(modelname):
 
 
 def post_to_csv(json_file, name):
-    filename = name[:name.rfind('.')]
-    json_file = json_file.read()
-    json_file = str(json_file.decode('utf-8'))
-    json_file = json.loads(json_file)
-    for i in json_file:
-        path = f"csv_result\\{filename}.csv"
-        print(path)
-        # print(i)
-        with open(path, "a") as csv_file:
-            writer = csv.writer(csv_file)
-            writer.writerow(
-                (i.values())
-            )
+    """
+    Преобразование json в csv
+
+    :param json_file: бинарный файл из пост запроса
+    :param name: название принятого файла без расширения из пост запроса
+    """
+    df = pd.read_json(json_file)
+    df.to_csv(Path('csv_result', name + '.csv'), encoding='utf-8', index=False)
 
 
 def normal_json(file, name, rounds=1):

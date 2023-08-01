@@ -33,14 +33,26 @@
 <br>
 
 
-  <form method="post" enctype="multipart/form-data">
+  <form method="post" enctype="multipart/form-data" action="{% url 'hui' %}">
     {% csrf_token %}
       <p>
           <h3>JSON в CSV</h3>
     <input type="file" name="myfile">
     <button type="submit">Upload</button>
+
     </p>
+      <h2>{{ hui }}</h2>
       <br>
+         {% if messages %}
+                  {% for message in messages %}
+                 <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <strong>{{ message}}</strong>
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+                </div>
+                  {% endfor %}
+                {% endif %}
       <p>
           <h3>Преобразовать JSON</h3>
       <input type="file" name="json_file">
