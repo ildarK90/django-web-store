@@ -14,6 +14,8 @@ import os
 import pandas as pd
 
 
+
+
 def read(file):
     with open(file, 'r', ) as file:
         data = json.load(file)
@@ -123,13 +125,19 @@ def del_id(file):
 
 
 def download_csv(modeladmin, request, model):
-    model_list = {'Notebook': NoteBook, 'Smartphones': SmartPhones, 'Category': Category, 'Cart': Cart,
-                  'testmodel': TestModel}
+    model_list = {
+        'Notebook': NoteBook,
+        'Smartphones': SmartPhones,
+        'Category': Category,
+        'Cart': Cart,
+        'testmodel': TestModel
+    }
     # if not request.user.is_staff:
     #     raise PermissionDenied
     print('modellllllllllllll', model)
     model = model_list[model]
     queryset = model.objects.all()
+    print(queryset)
     opts = queryset.model._meta
     print('OOOOOOOOOpts', opts)
     model = queryset.model
@@ -140,9 +148,10 @@ def download_csv(modeladmin, request, model):
     if not os.path.isdir('csv_folder'):
         os.mkdir('csv_folder')
 
-    with open(Path('csv_folder', 'output_file_name.csv'), 'w+', encoding='utf-8', errors='replace', newline='') as file:  # encoding='utf-8'
+    with open(Path('csv_folder', f'output_{model.__name__}.csv'), 'w+', encoding='utf-8', errors='replace', newline='') as file:
         writer = csv.writer(file)
         field_names = [field.name for field in opts.fields]
+        print(field_names)
         # Write a first row with header information
         writer.writerow(field_names)
         # Write data rows
